@@ -568,4 +568,143 @@
                 
                 // Hide notification
                 document.getElementById('powerNotification').style.display = 'none';
+                                if (countdownTimer) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                }
+            }
+            
+            updateStudentDashboard();
+        }
+
+        // Start countdown timer
+        function startCountdown() {
+            let timeLeft = 60;
+            document.getElementById('countdown').textContent = timeLeft;
+            
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            
+            countdownTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('countdown').textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                }
+            }, 1000);
+        }
+
+        // Request override
+        function requestOverride() {
+            if (!currentUser || currentUser.role !== 'student') return;
+            
+            const room = rooms[currentUser.roomId];
+            if (!room) return;
+            
+            room.logs.push({
+                timestamp: new Date().toISOString(),
+                event: `Override request sent by occupant`
+            });
+            
+            alert('Override request sent to admin. Power will be restored shortly.');
+            
+            // Simulate admin response after 5 seconds
+            setTimeout(() => {
+                room.powerState = 'ON';
+                room.logs.push({
+                    timestamp: new Date().toISOString(),
+                    event: `Power manually set to ON by admin (override)`
+                });
+                
+                // Hide notification
+                document.getElementById('powerNotification').style.display = 'none';
+                if (countdownTimer) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                }
+                
+                updateStudentDashboard();
+            }, 5000);
+        }
+
+        // Switch tabs for student dashboard
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`.tab:nth-child(${tabName === 'usage' ? 1 : 2})`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
+
+        // Switch tabs for admin dashboard
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('#adminDashboard .tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('#adminDashboard .tab-content').forEach(content => content.classList.remove('active'));
+            
+            const tabIndex = ['rooms', 'logs', 'analytics'].indexOf(tabName) + 1;
+            document.querySelector(`#adminDashboard .tab:nth-child(${tabIndex})`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
+
+        // Update usage graph
+        function updateUsageGraph() {
+            const graph = document.getElementById('usageGraph');
+            graph.innerHTML = '';
+            
+            // Generate random usage data for the past 7 days
+            for (let i = 0; i < 7; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.left = `${(i * 45) + 20}px`;
+                bar.style.height = `${Math.floor(Math.random() * 150) + 50}px`;
+                graph.appendChild(bar);
+            }
+        }
+
+        // Admin power control
+        function adminPowerControl(roomId, powerState) {
+            const room = rooms[roomId];
+            if (!room) return;
+            
+            room.powerState = powerState;
+            room.logs.push({
+                timestamp: new Date().toISOString(),
+                event: `Power manually set to ${powerState} by admin`
+            });
+            
+            // If turning power on, hide notification for that room
+            if (powerState === 'ON' && roomId === currentUser.roomId) {
+                document.getElementById('powerNotification').style.display = 'none';
+                if (countdownTimer) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                }
+            }
+            
+            alert(`Room ${roomId} power turned ${powerState}`);
+        }
+
+        // Emergency trigger
+        function triggerEmergency() {
+            // Turn on all rooms
+            Object.keys(rooms).forEach(roomId => {
+                rooms[roomId].powerState = 'ON';
+                rooms[roomId].logs.push({
+                    timestamp: new Date().toISOString(),
+                    event: `Emergency trigger: Power ON due to fire alarm`
+                });
+            });
+            
+            alert('EMERGENCY: All rooms powered ON!');
+        }
+
+        // Initialize the usage graph
+        window.onload = updateUsageGraph;
+    </script>
+</body>
+</html>
    
+
